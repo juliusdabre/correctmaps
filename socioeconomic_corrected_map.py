@@ -24,42 +24,47 @@ map_styles = {
 st.sidebar.header("🔍 Filter Options")
 selected_style = st.sidebar.selectbox("Select Mapbox Style", list(map_styles.keys()))
 
-# Suburb dropdown
-suburb_options = sorted(df["Suburb"].dropna().unique())
+# State filter
+state_options = sorted(df["State"].dropna().unique())
+selected_state = st.sidebar.selectbox("Select State:", options=state_options)
+
+# Suburb dropdown (filtered by selected state)
+suburb_options = sorted(df[df["State"] == selected_state]["Suburb"].dropna().unique())
 selected_suburb = st.sidebar.selectbox("Select Suburb to Focus:", options=suburb_options)
 
-# Filter data
-filtered_df = df[df["Suburb"] == selected_suburb]
+# Filter for selected suburb within selected state
+filtered_df = df[(df["Suburb"] == selected_suburb) & (df["State"] == selected_state)]
 
 # Validate filtered data
 if filtered_df.empty:
     st.warning("⚠️ No data found for the selected suburb.")
 else:
     try:
-        lat = float(filtered_df["Long"].values[0])  # <- actual latitude
-        lon = float(filtered_df["Lat"].values[0])   # <- actual longitude
+        lat = float(filtered_df["Long"].values[0])
+        lon = float(filtered_df["Lat"].values[0])
     except Exception as e:
         st.error(f"❌ Could not extract coordinates: {e}")
         st.stop()
 
-    # Properly mapped columns
-    fig = px.scatter_mapbox(
+    # Highlight the suburb using its score
+    fig = px.choropleth_mapbox(
         filtered_df,
-        lat="Long",  # <- correct!
-        lon="Lat",   # <- correct!
+        geojson=None,  # scatter plot only — no boundary polygon
+        lat="Long",
+        lon="Lat",
+        locations=filtered_df.index,
         color="Socio-economic Ranking",
-        hover_name="Suburb",
-        hover_data={"State": True, "Socio-economic Ranking": True, "Lat": False, "Long": False},
         color_continuous_scale=[
             "#d73027", "#f46d43", "#fdae61", "#fee08b", "#d9ef8b",
             "#a6d96a", "#66bd63", "#1a9850", "#006837", "#004529"
         ],
         range_color=(df["Socio-economic Ranking"].min(), df["Socio-economic Ranking"].max()),
-        size_max=15,
-        zoom=11,
-        height=600,
         mapbox_style=map_styles[selected_style],
-        center={"lat": lat, "lon": lon}
+        zoom=11,
+        center={"lat": lat, "lon": lon},
+        height=600
     )
+
+    fig.update_traces(marker=dict(size=20))  # Highlight size
 
     st.plotly_chart(fig, use_container_width=True)
