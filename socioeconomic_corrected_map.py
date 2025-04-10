@@ -1,9 +1,10 @@
-import streamlit as st
+# Apply the map fix (flipped lat/lon) and clean summary formatting for display
+fixed_clean_code = """import streamlit as st
 import pandas as pd
 import plotly.express as px
 from fpdf import FPDF
 
-# Set Mapbox access token
+# Set Mapbox token
 px.set_mapbox_access_token("pk.eyJ1IjoiaW52ZXN0b3JzaG9yaXpvbiIsImEiOiJjbTk5Nm80NTUwYXJ0MnJxN3AyNWk2emgxIn0.vwAB8ce5FQpxMDxNLyrrMw")
 
 # Load data
@@ -24,16 +25,16 @@ df_filtered = df_filtered_state[df_filtered_state['Suburb'] == selected_suburb]
 
 # Map plot
 if not df_filtered.empty:
-    center_lat = df_filtered["Lat"].values[0]
-    center_lon = df_filtered["Long"].values[0]
+    center_lat = df_filtered["Long"].values[0]  # Long = Latitude
+    center_lon = df_filtered["Lat"].values[0]   # Lat = Longitude
 
     fig = px.scatter_mapbox(
         df_filtered,
-        lat="Lat",
-        lon="Long",
+        lat="Long",  # Corrected
+        lon="Lat",   # Corrected
         color="Socio-economic Ranking",
         size_max=15,
-        zoom=10,
+        zoom=12,
         hover_name="Suburb",
         hover_data=["State", "Socio-economic Ranking"],
         mapbox_style="carto-positron",
@@ -43,9 +44,14 @@ if not df_filtered.empty:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # Summary stats
-    st.markdown("### 📊 Summary Statistics")
-    st.write(df_filtered.describe())
+    # Clean summary stats
+    st.subheader("📊 Suburb Snapshot")
+    score = df_filtered['Socio-economic Ranking'].values[0]
+    st.markdown(f\"\"\"
+    - **Suburb**: `{selected_suburb}`  
+    - **State**: `{selected_state}`  
+    - **Socio-economic Ranking**: `{score}`
+    \"\"\")
 
     # PDF Report Generation
     def generate_pdf(suburb_info):
@@ -69,3 +75,18 @@ if not df_filtered.empty:
             )
 else:
     st.warning("No data available for the selected suburb. Please check the data file.")
+"""
+
+# Save new version to file
+script_path = "/mnt/data/socioeconomic_final_clean.py"
+with open(script_path, "w") as f:
+    f.write(fixed_clean_code)
+
+# Bundle
+bundle_path = "/mnt/data/socioeconomic_final_clean_bundle.zip"
+with zipfile.ZipFile(bundle_path, "w") as zipf:
+    zipf.write(script_path, arcname="socioeconomic_final_clean.py")
+    zipf.write("/mnt/data/Socioeconomic.xlsx", arcname="Socioeconomic.xlsx")
+    zipf.write("/mnt/data/requirements.txt", arcname="requirements.txt")
+
+bundle_path
