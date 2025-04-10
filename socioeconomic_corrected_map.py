@@ -36,17 +36,17 @@ if filtered_df.empty:
     st.warning("⚠️ No data found for the selected suburb.")
 else:
     try:
-        lat = float(filtered_df["Lat"].values[0])
-        lon = float(filtered_df["Long"].values[0])
+        lat = float(filtered_df["Long"].values[0])  # <- actual latitude
+        lon = float(filtered_df["Lat"].values[0])   # <- actual longitude
     except Exception as e:
         st.error(f"❌ Could not extract coordinates: {e}")
         st.stop()
 
-    # Fixed: lat = Long, lon = Lat
+    # Properly mapped columns
     fig = px.scatter_mapbox(
         filtered_df,
-        lat="Long",
-        lon="Lat",
+        lat="Long",  # <- correct!
+        lon="Lat",   # <- correct!
         color="Socio-economic Ranking",
         hover_name="Suburb",
         hover_data={"State": True, "Socio-economic Ranking": True, "Lat": False, "Long": False},
