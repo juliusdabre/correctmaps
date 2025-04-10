@@ -42,11 +42,11 @@ else:
         st.error(f"❌ Could not extract coordinates: {e}")
         st.stop()
 
-    # Generate map
+    # Fixed: lat = Long, lon = Lat
     fig = px.scatter_mapbox(
         filtered_df,
-        lat="Lat",
-        lon="Long",
+        lat="Long",
+        lon="Lat",
         color="Socio-economic Ranking",
         hover_name="Suburb",
         hover_data={"State": True, "Socio-economic Ranking": True, "Lat": False, "Long": False},
